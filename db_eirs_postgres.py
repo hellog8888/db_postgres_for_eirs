@@ -77,14 +77,14 @@ def convert_to_postgres(file_open):
                 cur.execute('DROP TABLE IF EXISTS cellular')
 
                 create_script = """ CREATE TABLE IF NOT EXISTS cellular (
-                                        РЭС                       varchar(41),
+                                        РЭС                       varchar(51),
                                         Адрес                     varchar(230),
                                         ТИП_РЭС                   varchar(5),
                                         Владелец                  varchar(11),
                                         Широта                    varchar(9),
                                         Долгота                   varchar(9),
                                         Частоты                   varchar(756),
-                                        Дополнительные_параметры  varchar(490),
+                                        Дополнительные_параметры  varchar(590),
                                         Классы_излучения          varchar(53),
                                         Серия_Номер_РЗ_СоР        varchar(13))
                                 """
