@@ -2,9 +2,12 @@ import psycopg2.extras
 import datetime
 import glob
 import openpyxl
+import pandas as pd
 import warnings
+from datetime import datetime
 
 warnings.simplefilter("ignore")
+
 
 dict_for_operator = \
     {
@@ -53,6 +56,9 @@ def measure_time(func):
     return wrapper
 
 
+
+
+
 @measure_time
 def convert_to_postgres(file_open):
     hostname = 'localhost'
@@ -76,38 +82,30 @@ def convert_to_postgres(file_open):
                 # удалить таблицу (не считать ошибкой)
                 cur.execute('DROP TABLE IF EXISTS cellular')
 
-                create_script = """ CREATE TABLE IF NOT EXISTS cellular (
-                                        РЭС                       varchar(51),
+                create_table = """ CREATE TABLE IF NOT EXISTS cellular (
+                                        РЭС                       text,
                                         Адрес                     varchar(230),
                                         ТИП_РЭС                   varchar(5),
                                         Владелец                  varchar(11),
                                         Широта                    varchar(9),
                                         Долгота                   varchar(9),
                                         Частоты                   varchar(756),
-                                        Дополнительные_параметры  varchar(590),
+                                        Дополнительные_параметры  text,
                                         Классы_излучения          varchar(53),
                                         Серия_Номер_РЗ_СоР        varchar(13))
                                 """
 
-                cur.execute(create_script)
+                cur.execute(create_table)
 
-                file_to_read = openpyxl.load_workbook(file_open, data_only=True)
-                sheet = file_to_read['SQL Results']
+
 
                 for row in range(2, sheet.max_row + 1):
-                    data = []
 
-                    for col in range(1, sheet.max_column + 1):
-                        value = sheet.cell(row, col).value
-                        data.append(value)
 
                     cur.execute(
                          "INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                          (str(data[1]), str(data[2]), str(dict_ETC[data[3]]), str(dict_for_operator[data[6]]),
                           str(data[7]), str(data[8]), str(data[10]), str(data[11]), str(data[17]), f'{data[18]} {data[19]}'))
-
-                    #print(data[1], data[2], dict_ETC[data[3]], dict_for_operator[data[6]], data[7], data[8], data[10], data[11], data[17], f'{data[18]} {data[19]}')
-                    data.clear()
 
                 conn.commit()
 
@@ -118,5 +116,18 @@ def convert_to_postgres(file_open):
             conn.close()
 
 
+#file_xlxl_1 = glob.glob('source_folder\*.xlsx')
+
+#convert_to_postgres(file_xlxl_1[0])
+
+
+def converter_pandas(file):
+    cur_time = datetime.now()
+    time_now = f'{cur_time.day}-{cur_time.month:02}-{cur_time.year}__{cur_time.hour:02}_{cur_time.minute:02}_{cur_time.second:02}'
+
+    file_all = pd.read_excel(file).loc[:,['Наименование РЭС', 'Адрес', '№ вида ЕТС', 'Владелец', 'Широта', 'Долгота', 'Частоты', 'Дополнительные параметры', 'Классы излучения', 'Серия последнего действующего РЗ/СоР', 'Номер последнего действующего РЗ/СоР']]
+    file_all.to_csv(f'{time_now}.csv', sep='^', index=False, encoding='utf-8')
+
+
 file_xlxl_1 = glob.glob('source_folder\*.xlsx')
-convert_to_postgres(file_xlxl_1[0])
+converter_pandas(file_xlxl_1[0])
